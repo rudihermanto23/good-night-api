@@ -1,24 +1,22 @@
-# README
+# Good Night API
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+This project is a Rails API for the Good Night app. It is built with latest stable version of Ruby and Rails.
 
-Things you may want to cover:
+## Setup
 
-* Ruby version
+```bash
+bundle install
+```
 
-* System dependencies
+```bash
+rails db:create
+rails db:migrate
+```
 
-* Configuration
+```bash
+rails s
+```
 
-* Database creation
+## Usage
 
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+[Postman Collection](https://www.postman.com/kiosk-workspace/workspace/good-night/collection/14750254-175fa5ac-cd88-4632-8e0e-b53f843472cb?action=share&creator=14750254&active-environment=14750254-5087dbd3-8930-4fac-87be-944566832143)
