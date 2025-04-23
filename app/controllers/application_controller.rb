@@ -29,4 +29,12 @@ class ApplicationController < ActionController::API
     def not_found_response(entity)
         render json: { code: 404001, message: "#{entity} not found" }, status: :not_found
     end
+
+    def application_error_response(error)
+        if error.is_a?(GoodNightService::ApplicationError)
+            render json: { code: error.code, message: error.message }, status: :bad_request
+        else
+            render json: { code: 500001, message: 'Internal Server Error' }, status: :internal_server_error
+        end
+    end
 end

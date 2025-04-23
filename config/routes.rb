@@ -1,7 +1,7 @@
 Rails.application.routes.draw do
   resources :users, only: [:show]
 
-  resources :followers, only: [:index, :create, :update]
+  resources :followers, only: [:index, :create, :destroy]
 
   resources :sleep_records, only: [:index, :show, :create, :update] do
     get :followers, on: :collection
