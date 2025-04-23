@@ -1,2 +1,28 @@
 class ApplicationController < ActionController::API
+    protected
+
+    def set_current_user
+        # Since we do not implement authentication, we will use the user_id from the request header for simplicity
+        user_id = request.headers['X-User-Id']
+
+        unless user_id
+            unauthorized_response
+        end
+
+        @current_user = User.find(user_id)
+    end
+
+    def initialize_services
+        begin
+            set_current_user
+
+            @good_night_service ||= GoodNightService.new(@current_user)
+        rescue ActiveRecord::RecordNotFound
+            unauthorized_response
+        end
+    end
+
+    def unauthorized_response
+        render json: { code: 401001, message: 'Unauthorized' }, status: :unauthorized
+    end
 end
