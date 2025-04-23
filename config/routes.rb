@@ -1,7 +1,12 @@
 Rails.application.routes.draw do
-  resources :user_followers
-  resources :sleep_records
-  resources :users
+  resources :users, only: [:show]
+
+  resources :followers, only: [:index, :create, :update]
+
+  resources :sleep_records, only: [:index, :show, :create, :update] do
+    get :followers, on: :collection
+  end
+
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
