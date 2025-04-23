@@ -4,7 +4,11 @@ class GoodNightService
     end
 
     def get_user(id)
-        # TODO: Implement get user
+        begin
+            User.find(id)
+        rescue ActiveRecord::RecordNotFound
+            nil
+        end
     end
 
     def clock_in

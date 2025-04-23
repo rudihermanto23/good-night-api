@@ -25,4 +25,8 @@ class ApplicationController < ActionController::API
     def unauthorized_response
         render json: { code: 401001, message: 'Unauthorized' }, status: :unauthorized
     end
+
+    def not_found_response(entity)
+        render json: { code: 404001, message: "#{entity} not found" }, status: :not_found
+    end
 end
