@@ -18,15 +18,40 @@ module GoodNightService
         end
 
         def clock_in
-            # TODO: Implement clock in
+            last_record = @user.sleep_records.order(clock_in: :desc).first
+
+            if last_record && last_record.duration_seconds == 0
+                last_record.update(duration_seconds: (Time.now - last_record.clock_in).abs)
+            end
+
+            SleepRecord.create(user_id: @user.id, clock_in: Time.now, duration_seconds: 0)
         end
 
         def clock_out(sleep_record_id)
-            # TODO: Implement clock out
+            record = SleepRecord.find(sleep_record_id)
+
+            if record.user_id != @user.id
+                raise ActiveRecord::RecordNotFound
+            end
+
+            record.update(duration_seconds: (Time.now - record.clock_in).abs)
+
+            record
         end
 
-        def get_self_sleep_records
-            # TODO: Implement get self sleep records
+        def get_self_sleep_records(page, per_page)
+            count = @user.sleep_records.count
+            records = @user.sleep_records.order(clock_in: :desc).limit(per_page).offset((page - 1) * per_page)
+
+            {
+                data: records,
+                meta: {
+                    page: page,
+                    per_page: per_page,
+                    total_pages: (count.to_f / per_page).ceil,
+                    total_count: count
+                }
+            }
         end
 
         def follow_user(user_id)
@@ -59,8 +84,24 @@ module GoodNightService
             follower.destroy
         end
 
-        def get_user_followers_sleep_records
-            # TODO: Implement get user followers sleep records
+        def get_user_followers_sleep_records(include_self = false)
+            followers = @user.followers
+
+            if include_self
+                followers << @user
+            end
+
+            SleepRecord.where(user_id: followers.map(&:id)).where('clock_in > ?', 7.days.ago).where('duration_seconds > ?', 0).order(duration_seconds: :desc).map do |record|
+                {
+                    id: record.id,
+                    duration_seconds: record.duration_seconds,
+                    clock_in: record.clock_in,
+                    user: {
+                        id: record.user.id,
+                        name: record.user.name
+                    }
+                }
+            end
         end
     end
 

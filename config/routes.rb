@@ -3,8 +3,8 @@ Rails.application.routes.draw do
 
   resources :followers, only: [:index, :create, :destroy]
 
-  resources :sleep_records, only: [:index, :show, :create, :update] do
-    get :followers, on: :collection
+  resources :sleep_records, only: [:index, :create, :update] do
+    get :following, on: :collection
   end
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
