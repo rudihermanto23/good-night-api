@@ -1,7 +1,12 @@
 module GoodNightService
     class << self
-        def new(user)
-            @user = user
+        def new(user_id)
+            raise UnauthorizedError unless user_id
+
+            @user = User.find(user_id)
+
+            raise UnauthorizedError unless @user
+
             self
         end
 
@@ -36,7 +41,7 @@ module GoodNightService
 
             record.update(duration_seconds: (Time.now - record.clock_in).abs)
 
-            record
+            record.reload
         end
 
         def get_self_sleep_records(page, per_page)
@@ -68,10 +73,10 @@ module GoodNightService
             user = get_user(user_id)
 
             if user.nil?
-                raise GoodNightService::UserNotFoundError
+                raise GoodNightService::NotFoundError
             end
 
-            UserFollower.create(user_id: @user.id, follower: user_id, created_at: Time.now)
+            UserFollower.create(user_id: @user.id, follower: user, created_at: Time.now)
         end
 
         def unfollow_user(user_id)
@@ -91,7 +96,7 @@ module GoodNightService
                 followers << @user
             end
 
-            SleepRecord.where(user_id: followers.map(&:id)).where('clock_in > ?', 7.days.ago).where('duration_seconds > ?', 0).order(duration_seconds: :desc).map do |record|
+            SleepRecord.where(user_id: followers.map(&:id)).where("clock_in > ?", 7.days.ago).where("duration_seconds > ?", 0).order(duration_seconds: :desc).map do |record|
                 {
                     id: record.id,
                     duration_seconds: record.duration_seconds,
@@ -106,35 +111,41 @@ module GoodNightService
     end
 
     class ApplicationError < StandardError
-        attr_reader :code, :message
-    
+        attr_accessor :code, :message
+
         def initialize(code, message)
             @code = code
             @message = message
         end
     end
-    
+
+    class UnauthorizedError < ApplicationError
+        def initialize
+            super(401001, "Unauthorized")
+        end
+    end
+
+    class NotFoundError < ApplicationError
+        def initialize
+            super(404001, "Not found")
+        end
+    end
+
     class CannotFollowYourselfError < ApplicationError
         def initialize
-            super(400001, 'Cannot follow yourself')
+            super(400001, "Cannot follow yourself")
         end
     end
 
     class AlreadyFollowedError < ApplicationError
         def initialize
-            super(400002, 'Already followed')
+            super(400002, "Already followed")
         end
     end
 
     class NotFollowedError < ApplicationError
         def initialize
-            super(400003, 'Not followed')
-        end
-    end
-    
-    class UserNotFoundError < ApplicationError
-        def initialize
-            super(404001, 'User not found')
+            super(400003, "Not followed")
         end
     end
 end

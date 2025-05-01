@@ -1,40 +1,44 @@
 class ApplicationController < ActionController::API
-    protected
+    before_action :initialize_services
 
-    def set_current_user
-        # Since we do not implement authentication, we will use the user_id from the request header for simplicity
-        user_id = request.headers['X-User-Id']
-
-        unless user_id
-            unauthorized_response
+    rescue_from StandardError do |exception|
+        case exception
+        when ActiveRecord::RecordNotFound
+            not_found_response
+        else
+            application_error_response(exception)
         end
-
-        @current_user = User.find(user_id)
     end
 
-    def initialize_services
-        begin
-            set_current_user
+    protected
 
-            @good_night_service ||= GoodNightService.new(@current_user)
-        rescue ActiveRecord::RecordNotFound
-            unauthorized_response
-        end
+    def initialize_services
+        user_id = request.headers["X-User-Id"]
+
+        @good_night_service ||= GoodNightService.new(user_id)
     end
 
     def unauthorized_response
-        render json: { code: 401001, message: 'Unauthorized' }, status: :unauthorized
+        render json: { code: 401001, message: "Unauthorized" }, status: :unauthorized
     end
 
-    def not_found_response(entity)
-        render json: { code: 404001, message: "#{entity} not found" }, status: :not_found
+    def not_found_response
+        render json: { code: 404001, message: "Not found" }, status: :not_found
     end
 
     def application_error_response(error)
         if error.is_a?(GoodNightService::ApplicationError)
-            render json: { code: error.code, message: error.message }, status: :bad_request
+            case error
+            when GoodNightService::UnauthorizedError
+                unauthorized_response
+            when GoodNightService::NotFoundError
+                not_found_response
+            else
+                render json: { code: error.code, message: error.message }, status: :bad_request and return
+            end
         else
-            render json: { code: 500001, message: 'Internal Server Error' }, status: :internal_server_error
+            Rails.logger.error("error: #{error.inspect}, class: #{error.class}, stack:\n#{error.backtrace.join("\n")}")
+            render json: { code: 500001, message: "Internal Server Error" }, status: :internal_server_error
         end
     end
 end
